@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://cee161gc6f37m"
+path="res://.godot/imported/array_multiply.glsl-ea319dc3a1956b384475169be961d42a.res"
+
+[deps]
+
+source_file="res://examples/array_multiply/array_multiply.glsl"
+dest_files=["res://.godot/imported/array_multiply.glsl-ea319dc3a1956b384475169be961d42a.res"]
+
+[params]
+
