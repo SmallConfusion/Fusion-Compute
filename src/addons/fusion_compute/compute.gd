@@ -67,7 +67,7 @@ func get_data(binding: int, offset := 0, size := 0) -> PackedByteArray:
 	return rd.buffer_get_data(buffers[binding], offset, size)
 
 
-func create_image(width: int, height: int, format: RenderingDevice.DataFormat, usage_bits: RenderingDevice.TextureUsageBits) -> int:
+func create_image(width: int, height: int, format: RenderingDevice.DataFormat, usage_bits: int) -> int:
 	if lock:
 		printerr("Tried to create data buffer after run")
 		return -1
@@ -124,7 +124,7 @@ func submit(push_bytes := PackedByteArray()) -> void:
 
 
 func sync() -> void:
-	rd.sync()
+	rd. sync ()
 
 
 func free() -> void:

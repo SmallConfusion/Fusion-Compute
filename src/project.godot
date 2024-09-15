@@ -11,9 +11,26 @@ config_version=5
 [application]
 
 config/name="FusionCompute"
+run/main_scene="res://examples/slime/slime.tscn"
 config/features=PackedStringArray("4.3")
+run/max_fps=60
 config/icon="res://icon.svg"
+
+[debug]
+
+settings/stdout/print_fps=true
+
+[display]
+
+window/size/viewport_width=1024
+window/size/viewport_height=1024
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/fusion_compute/plugin.cfg")
+
+[rendering]
+
+viewport/hdr_2d=true
