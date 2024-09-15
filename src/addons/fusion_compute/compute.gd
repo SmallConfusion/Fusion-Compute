@@ -36,7 +36,7 @@ static func create(shader_path: String, wg_count_x := 1, wg_count_y := 1, wg_cou
 	return c
 
 
-func create_data_buffer(data: PackedByteArray) -> int:
+func create_data(data: PackedByteArray) -> int:
 	if lock:
 		printerr("Tried to create data buffer after run")
 		return -1
@@ -56,15 +56,49 @@ func create_data_buffer(data: PackedByteArray) -> int:
 	return binding
 
 
-func update_data_buffer(binding: int, data: PackedByteArray, offset := 0, size := -1) -> void:
+func update_data(binding: int, data: PackedByteArray, offset := 0, size := -1) -> void:
 	if size == -1:
 		size = data.size()
 
 	rd.buffer_update(buffers[binding], 0, size, data)
 
 
-func get_data_buffer(binding: int, offset := 0, size := 0) -> PackedByteArray:
+func get_data(binding: int, offset := 0, size := 0) -> PackedByteArray:
 	return rd.buffer_get_data(buffers[binding], offset, size)
+
+
+func create_image(width: int, height: int, format: RenderingDevice.DataFormat, usage_bits: RenderingDevice.TextureUsageBits) -> int:
+	if lock:
+		printerr("Tried to create data buffer after run")
+		return -1
+
+	var image_format := RDTextureFormat.new()
+	image_format.width = width
+	image_format.height = height
+	image_format.format = format
+	image_format.usage_bits = usage_bits
+
+	var binding = len(uniforms)
+
+	var image_buffer := rd.texture_create(image_format, RDTextureView.new())
+
+	var image_uniform := RDUniform.new()
+	image_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	image_uniform.binding = binding
+	image_uniform.add_id(image_buffer)
+
+	buffers.append(image_buffer)
+	uniforms.append(image_uniform)
+
+	return binding
+
+
+func update_image(binding: int, data: PackedByteArray) -> void:
+	rd.texture_update(buffers[binding], 0, data)
+
+
+func get_image(binding: int) -> PackedByteArray:
+	return rd.texture_get_data(buffers[binding], 0)
 
 
 func submit(push_bytes := PackedByteArray()) -> void:
@@ -91,3 +125,14 @@ func submit(push_bytes := PackedByteArray()) -> void:
 
 func sync() -> void:
 	rd.sync()
+
+
+func free() -> void:
+	rd.free_rid(pipeline)
+	rd.free_rid(uniform_set)
+	rd.free_rid(shader)
+	
+	for buffer in buffers:
+		rd.free_rid(buffer)
+	
+	rd.free()
