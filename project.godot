@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="FusionCompute"
-run/main_scene="res://examples/slime/slime.tscn"
+run/main_scene="res://addons/fusion_compute/examples/slime/slime.tscn"
 config/features=PackedStringArray("4.3")
 config/icon="res://icon.svg"
 

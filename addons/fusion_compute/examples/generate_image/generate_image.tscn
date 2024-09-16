@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://d3k3igu00npky"]
 
-[ext_resource type="Script" path="res://examples/generate_image/generate_image.gd" id="1_6enyk"]
+[ext_resource type="Script" path="res://addons/fusion_compute/examples/generate_image/generate_image.gd" id="1_6enyk"]
 
 [node name="GenerateImage" type="Control"]
 layout_mode = 3

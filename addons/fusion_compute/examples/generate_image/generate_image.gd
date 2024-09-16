@@ -3,7 +3,7 @@ extends Node
 
 func _ready() -> void:
 	@warning_ignore("integer_division")
-	var c := Compute.create("res://examples/generate_image/generate_image.glsl", 512 / 8, 512 / 8, 1);
+	var c := Compute.create("res://addons/fusion_compute/examples/generate_image/generate_image.glsl", 512 / 8, 512 / 8, 1);
 
 	var usage := \
 		RenderingDevice.TEXTURE_USAGE_STORAGE_BIT + \

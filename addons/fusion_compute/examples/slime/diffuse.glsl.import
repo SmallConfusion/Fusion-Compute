@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://d3umgr625tig8"
+path="res://.godot/imported/diffuse.glsl-c0b038012adcc971e2157cb08416f8cd.res"
+
+[deps]
+
+source_file="res://addons/fusion_compute/examples/slime/diffuse.glsl"
+dest_files=["res://.godot/imported/diffuse.glsl-c0b038012adcc971e2157cb08416f8cd.res"]
+
+[params]
+

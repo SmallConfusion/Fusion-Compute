@@ -1,15 +1,15 @@
 [gd_scene load_steps=6 format=3 uid="uid://duxqc645il4la"]
 
-[ext_resource type="Script" path="res://examples/slime/slime.gd" id="1_y0m7v"]
-[ext_resource type="Shader" path="res://examples/slime/display.gdshader" id="2_ur8uh"]
+[ext_resource type="Script" path="res://addons/fusion_compute/examples/slime/slime.gd" id="1_y0m7v"]
+[ext_resource type="Shader" path="res://addons/fusion_compute/examples/slime/display.gdshader" id="2_ur8uh"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_nwdrs"]
 shader = ExtResource("2_ur8uh")
 
-[sub_resource type="Gradient" id="Gradient_oxm5q"]
+[sub_resource type="Gradient" id="Gradient_p2eee"]
 
-[sub_resource type="GradientTexture2D" id="GradientTexture2D_yaax2"]
-gradient = SubResource("Gradient_oxm5q")
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_uqvng"]
+gradient = SubResource("Gradient_p2eee")
 fill_to = Vector2(1, 1)
 
 [node name="Control" type="Control"]
@@ -38,6 +38,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-texture = SubResource("GradientTexture2D_yaax2")
+texture = SubResource("GradientTexture2D_uqvng")
 expand_mode = 1
 stretch_mode = 1

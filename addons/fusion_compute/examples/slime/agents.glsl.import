@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://c441mxxby5ybe"
+path="res://.godot/imported/agents.glsl-d0f88125640614e95b0e826a09bb6a21.res"
+
+[deps]
+
+source_file="res://addons/fusion_compute/examples/slime/agents.glsl"
+dest_files=["res://.godot/imported/agents.glsl-d0f88125640614e95b0e826a09bb6a21.res"]
+
+[params]
+

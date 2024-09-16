@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://dsoh0wx2fc28"
+path="res://.godot/imported/generate_image.glsl-2793b4d3a41537d0b0205ba0c3bd683d.res"
+
+[deps]
+
+source_file="res://addons/fusion_compute/examples/generate_image/generate_image.glsl"
+dest_files=["res://.godot/imported/generate_image.glsl-2793b4d3a41537d0b0205ba0c3bd683d.res"]
+
+[params]
+

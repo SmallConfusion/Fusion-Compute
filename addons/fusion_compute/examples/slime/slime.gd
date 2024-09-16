@@ -22,14 +22,15 @@ const agent_count := wg_count * wg_size
 @export_range(0, 5, 0.00001, "or_greater") var turning := 0.1;
 @export_range(0, 0.2, 0.00001, "or_greater") var random := 0.005;
 
+
 var compute: Compute
 
 
 func _ready() -> void:
-	compute = Compute.create("res://examples/slime/agents.glsl", wg_count)
+	compute = Compute.create("res://addons/fusion_compute/examples/slime/agents.glsl", wg_count)
 
 	@warning_ignore("integer_division")
-	compute.create_pipeline("res://examples/slime/diffuse.glsl", width / 8, height / 8)
+	compute.create_pipeline("res://addons/fusion_compute/examples/slime/diffuse.glsl", width / 8, height / 8)
 
 	var agent_data := _agents_circle().to_byte_array()
 
