@@ -11,15 +11,15 @@ const wg_count := 1000000 / wg_size
 const agent_count := wg_count * wg_size
 
 
-@export_range(0.9, 1, 0.00001, "or_less") var evaporation := 0.99
+@export_range(0, 1, 0.00001, "or_less") var evaporation := 0.99
 @export_range(0, 0.25, 0.0001) var diffusion := 0.1
 
-@export_range(0, 10, 0.0001, "or_greater", "or_less") var trail_strength := 0.1
-@export_range(0, PI, 0.001) var sensor_angle := PI / 180.0 * 30.0;
-@export_range(0, 20, 0.01, "or_greater") var sensor_distance := 1.5;
+@export_range(0, 1, 0.0001, "or_greater", "or_less") var trail_strength := 0.1
+@export_range(0, PI, 0.0001, "or_greater") var sensor_angle := PI / 180.0 * 30.0;
+@export_range(0, 40, 0.01, "or_greater") var sensor_distance := 1.5;
 
-@export_range(0, 20, 0.001, "or_greater", "or_less") var speed := 1.0;
-@export_range(0, 0.2, 0.00001, "or_greater") var turning := 0.1;
+@export_range(0, 5, 0.0001, "or_greater", "or_less") var speed := 1.0;
+@export_range(0, 5, 0.00001, "or_greater") var turning := 0.1;
 @export_range(0, 0.2, 0.00001, "or_greater") var random := 0.005;
 
 var compute: Compute

@@ -1,5 +1,4 @@
 class_name Compute
-extends Node
 
 class Pipeline:
 	var shader: RID

@@ -57,17 +57,6 @@ void main() {
 
 	float angle = agents.data[gl_GlobalInvocationID.x * 3 + 2];
 
-	// Wall collision
-	// if (pos.x < 0 || pos.x > pc.width || pos.y < 0 || pos.y > pc.width) {
-		// angle = random(vec2(pc.time) * pos * angle) * TAU;
-		// pos = clamp(pos, vec2(0), vec2(pc.width, pc.height));
-	// }
-
-	// if (any(isnan(pos)) || any(isinf(pos)) || isnan(angle) || isinf(angle)) {
-		// pos = vec2(500, 500);
-		// angle = 0;
-	// }
-
 	pos = loop_screen(pos);
 
 	// Sensors
