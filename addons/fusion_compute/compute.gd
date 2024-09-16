@@ -79,7 +79,7 @@ func get_data(binding: int, offset := 0, size := 0) -> PackedByteArray:
 	return _rd.buffer_get_data(_buffers[binding], offset, size)
 
 
-## Initializes an image. This function does not assign anything to this image, update_image() shoudl be called after this to provide image data. Returns the binding that this image was created on.
+## Initializes an image. This function does not assign anything to this image, update_image() should be called after this to provide image data. Returns the binding that this image was created on.
 ##
 ## When creating data buffers or images, they should be created in binding order, as the first one
 ## created will be binding = 0, the second one will be binding = 1, and so on.
