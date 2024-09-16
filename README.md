@@ -23,7 +23,7 @@ More examples can be found in the [examples folder.](./addons/fusion_compute/exa
 
 There are only a few ways to interact with compute shaders. This plugin supports data buffers, images, and push constants. In addition, this plugin also supports multiple pipelines using the same buffers. Anything more than that (eg. [recreating this example project with swapping RIDs through uniform sets](https://github.com/godotengine/godot-demo-projects/tree/master/compute/texture/water_plane)) is not supported. I potentially want to add support for more things like that in the future, but the first priortiy of this plugin is to make interacting with compute shaders as simple as possible, rather than abstracting everything you could want to do with a compute shader.
 
-Shaders themselves are not changed by this plugin, they are written exactly the same, only the gdscript boilerplate is abstracted away.
+Shaders themselves are not changed by this addon, they are written exactly the same, only the gdscript boilerplate is abstracted away.
 
 ## Documentation
 
