@@ -28,6 +28,7 @@ var bound_pipeline := 0
 var lock := false
 
 
+## Creates an instance of Compute. Use this function rather than .new(), as this runs necessary initialization steps
 static func create(shader_path: String, wg_count_x := 1, wg_count_y := 1, wg_count_z := 1) -> Compute:
 	var c := Compute.new()
 
@@ -37,6 +38,7 @@ static func create(shader_path: String, wg_count_x := 1, wg_count_y := 1, wg_cou
 	return c
 
 
+## Creates a data buffer from the provided PackedByteArray. It returns the binding that this buffer is on.
 func create_data(data: PackedByteArray) -> int:
 	if lock:
 		printerr("Tried to create data buffer after run")
@@ -57,6 +59,7 @@ func create_data(data: PackedByteArray) -> int:
 	return binding
 
 
+## Updates data on the provided buffer.
 func update_data(binding: int, data: PackedByteArray, offset := 0, size := -1) -> void:
 	if size == -1:
 		size = data.size()
@@ -64,10 +67,12 @@ func update_data(binding: int, data: PackedByteArray, offset := 0, size := -1) -
 	rd.buffer_update(buffers[binding], 0, size, data)
 
 
+## Gets the data from the provided buffer.
 func get_data(binding: int, offset := 0, size := 0) -> PackedByteArray:
 	return rd.buffer_get_data(buffers[binding], offset, size)
 
 
+## Initializes an image. This function does not assign anything to this image, update_image() shoudl be called after this to provide image data. Returns the binding that this image was created on.
 func create_image(width: int, height: int, format: RenderingDevice.DataFormat, usage_bits: int) -> int:
 	if lock:
 		printerr("Tried to create data buffer after run")
@@ -94,14 +99,17 @@ func create_image(width: int, height: int, format: RenderingDevice.DataFormat, u
 	return binding
 
 
+## Updates image data on the provided binding.
 func update_image(binding: int, data: PackedByteArray) -> void:
 	rd.texture_update(buffers[binding], 0, data)
 
 
+## Gets the image data from the provided binding.
 func get_image(binding: int) -> PackedByteArray:
 	return rd.texture_get_data(buffers[binding], 0)
 
 
+## Submits the compute shader.
 func submit(push_bytes := PackedByteArray()) -> void:
 	lock = true
 
@@ -126,10 +134,12 @@ func submit(push_bytes := PackedByteArray()) -> void:
 	rd.submit()
 
 
+## Syncs the shader.
 func sync() -> void:
 	rd.sync()
 
 
+## Performs cleanup, freeing data from the gpu. This should be called when you're done with the Compute object, to avoid memory leaks.
 func cleanup() -> void:
 	for p in pipelines:
 		p.cleanup(rd)
@@ -140,6 +150,7 @@ func cleanup() -> void:
 	rd.free()
 
 
+## Creates another pipeline on this Compute object. Buffers are shared between all pipelines.
 func create_pipeline(shader_path: String, wg_count_x := 1, wg_count_y := 1, wg_count_z := 1) -> int:
 	var p := Pipeline.new()
 	
@@ -158,5 +169,6 @@ func create_pipeline(shader_path: String, wg_count_x := 1, wg_count_y := 1, wg_c
 	return len(pipelines) - 1
 
 
+## Preps the pipeline for use. This function runs nothing, use submit() after setting the pipeline to run the pipeline.
 func bind_pipeline(pipeline_index: int) -> void:
 	bound_pipeline = pipeline_index
