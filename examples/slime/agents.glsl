@@ -19,8 +19,12 @@ layout(push_constant) uniform PushConstants {
 	float speed;
 	float turning;
 	float random;
+	float time;
 }
 pc;
+
+
+const float TAU = 6.28318530718;
 
 
 vec2 rotate(vec2 v, float a) {
@@ -30,77 +34,74 @@ vec2 rotate(vec2 v, float a) {
 	);
 }
 
-float random(float s) {
-	return fract(sin(s * 358.294459) * 253853.83598);
+vec2 angle_vec(float a) {
+	return vec2(cos(a), sin(a));
 }
+
+float random(vec2 st) {
+	st = mod(st, vec2(1000));
+    return fract(sin(dot(st.xy, vec2(12.9898,78.233)))*43758.5453123);
+}
+
+vec2 loop_screen(vec2 pos) {
+	return mod(pos, vec2(pc.width, pc.height));
+}
+
 
 void main() {
 	// Setup
 	vec2 pos = vec2(
-		agents.data[gl_GlobalInvocationID.x * 4],
-		agents.data[gl_GlobalInvocationID.x * 4 + 1]
+		agents.data[gl_GlobalInvocationID.x * 3],
+		agents.data[gl_GlobalInvocationID.x * 3 + 1]
 	);
 
-	vec2 vel = vec2(
-		agents.data[gl_GlobalInvocationID.x * 4 + 2],
-		agents.data[gl_GlobalInvocationID.x * 4 + 3]
-	);
-
-	// if (any(isnan(pos)) || any(isnan(vel)) || any(isinf(pos)) || any(isinf(vel))) {
-		// pos = vec2(pc.width, pc.height) / 2.0;
-		// vel = vec2(
-			// random(float(gl_GlobalInvocationID.x)),
-			// random(float(gl_GlobalInvocationID.x) + 0.245)
-		// );
-	// }
+	float angle = agents.data[gl_GlobalInvocationID.x * 3 + 2];
 
 	// Wall collision
-	if (pos.x < 0 || pos.x > pc.width) {
-		pos.x = clamp(pos.x, 0, pc.width);
-		vel.x = -vel.x;
-	}
+	// if (pos.x < 0 || pos.x > pc.width || pos.y < 0 || pos.y > pc.width) {
+		// angle = random(vec2(pc.time) * pos * angle) * TAU;
+		// pos = clamp(pos, vec2(0), vec2(pc.width, pc.height));
+	// }
 
-	if (pos.y < 0 || pos.y > pc.width) {
-		pos.y = clamp(pos.y, 0, pc.width);
-		vel.y = -vel.y;
-	}
+	// if (any(isnan(pos)) || any(isinf(pos)) || isnan(angle) || isinf(angle)) {
+		// pos = vec2(500, 500);
+		// angle = 0;
+	// }
 
+	pos = loop_screen(pos);
 
 	// Sensors
-	vec2 forward = normalize(vel) * pc.sensor_distance;
-	vec2 left = rotate(forward, pc.sensor_angle);
-	vec2 right = rotate(forward, -pc.sensor_angle);
+	vec2 forward = angle_vec(angle) * pc.sensor_distance;
+	vec2 left = angle_vec(angle - pc.sensor_angle) * pc.sensor_distance;
+	vec2 right = angle_vec(angle + pc.sensor_angle) * pc.sensor_distance;
 	
-	float f_val = imageLoad(trailmap, ivec2(clamp(pos + forward, vec2(0), vec2(pc.width, pc.height)))).r;
-	float l_val = imageLoad(trailmap, ivec2(clamp(pos + left, vec2(0), vec2(pc.width, pc.height)))).r;
-	float r_val = imageLoad(trailmap, ivec2(clamp(pos + right, vec2(0), vec2(pc.width, pc.height)))).r;
+	float f_val = imageLoad(trailmap, ivec2(loop_screen(pos + forward))).r;
+	float l_val = imageLoad(trailmap, ivec2(loop_screen(pos + left))).r;
+	float r_val = imageLoad(trailmap, ivec2(loop_screen(pos + right))).r;
 
-	vec2 max_dir = forward;
+	// Steering
+	float random_steer = 2.0 * (random(pc.time * pos * forward) - 0.5);
 
-	if (l_val > f_val) {
-		max_dir = left;
+	if (f_val > max(l_val, r_val)) {
+		// angle += 0;
+	} else if (f_val < min(l_val, r_val)) {
+		angle += pc.turning * random_steer;
+	} else if (r_val > l_val) {
+		angle += pc.turning + random_steer * pc.random;
+	} else {
+		angle -= pc.turning + random_steer * pc.random;
 	}
 
-	if (r_val > max(f_val, l_val)) {
-		max_dir = right;
-	}
-
-	// Physics
-	vel += max_dir * pc.turning; 
-
-	vel = normalize(vel) * pc.speed;
-	vel += rotate(forward, random(float(gl_GlobalInvocationID) + dot(pos, vel)) * 6.28318530718) * pc.random;
+	vec2 vel = angle_vec(angle) * pc.speed;
 
 	// Should use atomic add here I think, but idk how to do that.
 	float under = imageLoad(trailmap, ivec2(pos)).r;
-
 	imageStore(trailmap, ivec2(pos), vec4(pc.trailStrength + under));
 
 	pos += vel;
 
 	// Store
-	agents.data[gl_GlobalInvocationID.x * 4] = pos.x;
-	agents.data[gl_GlobalInvocationID.x * 4 + 1] = pos.y;
-	agents.data[gl_GlobalInvocationID.x * 4 + 2] = vel.x;
-	agents.data[gl_GlobalInvocationID.x * 4 + 3] = vel.y;
+	agents.data[gl_GlobalInvocationID.x * 3] = pos.x;
+	agents.data[gl_GlobalInvocationID.x * 3 + 1] = pos.y;
+	agents.data[gl_GlobalInvocationID.x * 3 + 2] = angle;
 }

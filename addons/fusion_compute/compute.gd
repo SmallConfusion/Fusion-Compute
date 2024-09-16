@@ -1,18 +1,29 @@
 class_name Compute
 extends Node
 
+class Pipeline:
+	var shader: RID
+	var pipeline: RID
+	var uniform_set: RID
+
+	var wgx: int
+	var wgy: int
+	var wgz: int
+
+	func cleanup(rd: RenderingDevice):
+		rd.free_rid(shader)
+		rd.free_rid(pipeline)
+		rd.free_rid(uniform_set)
+
 
 var rd: RenderingDevice
-var shader: RID
-var pipeline: RID
-var uniform_set: RID
 
 var uniforms: Array[RDUniform] = []
 var buffers: Array[RID] = []
 
-var wgx: int
-var wgy: int
-var wgz: int
+var pipelines: Array[Pipeline] = []
+
+var bound_pipeline := 0
 
 
 var lock := false
@@ -21,17 +32,8 @@ var lock := false
 static func create(shader_path: String, wg_count_x := 1, wg_count_y := 1, wg_count_z := 1) -> Compute:
 	var c := Compute.new()
 
-	c.wgx = wg_count_x
-	c.wgy = wg_count_y
-	c.wgz = wg_count_z
-
 	c.rd = RenderingServer.create_local_rendering_device()
-
-	var f := load(shader_path)
-	var spirv: RDShaderSPIRV = f.get_spirv()
-	c.shader = c.rd.shader_create_from_spirv(spirv)
-
-	c.pipeline = c.rd.compute_pipeline_create(c.shader)
+	c.create_pipeline(shader_path, wg_count_x, wg_count_y, wg_count_z)
 	
 	return c
 
@@ -104,12 +106,14 @@ func get_image(binding: int) -> PackedByteArray:
 func submit(push_bytes := PackedByteArray()) -> void:
 	lock = true
 
-	if not uniform_set:
-		uniform_set = rd.uniform_set_create(uniforms, shader, 0)
+	var p := pipelines[bound_pipeline]
+
+	if not p.uniform_set:
+		p.uniform_set = rd.uniform_set_create(uniforms, p.shader, 0)
 
 	var compute_list = rd.compute_list_begin()
-	rd.compute_list_bind_compute_pipeline(compute_list, pipeline)
-	rd.compute_list_bind_uniform_set(compute_list, uniform_set, 0)
+	rd.compute_list_bind_compute_pipeline(compute_list, p.pipeline)
+	rd.compute_list_bind_uniform_set(compute_list, p.uniform_set, 0)
 
 	if len(push_bytes) != 0:
 		while push_bytes.size() % 16 != 0:
@@ -117,22 +121,43 @@ func submit(push_bytes := PackedByteArray()) -> void:
 
 		rd.compute_list_set_push_constant(compute_list, push_bytes, push_bytes.size())
 
-	rd.compute_list_dispatch(compute_list, wgx, wgy, wgz)
+	rd.compute_list_dispatch(compute_list, p.wgx, p.wgy, p.wgz)
 	rd.compute_list_end()
 
 	rd.submit()
 
 
 func sync() -> void:
-	rd. sync ()
+	rd.sync()
 
 
-func free() -> void:
-	rd.free_rid(pipeline)
-	rd.free_rid(uniform_set)
-	rd.free_rid(shader)
+func cleanup() -> void:
+	for p in pipelines:
+		p.cleanup(rd)
 	
 	for buffer in buffers:
 		rd.free_rid(buffer)
 	
 	rd.free()
+
+
+func create_pipeline(shader_path: String, wg_count_x := 1, wg_count_y := 1, wg_count_z := 1) -> int:
+	var p := Pipeline.new()
+	
+	p.wgx = wg_count_x
+	p.wgy = wg_count_y
+	p.wgz = wg_count_z
+
+	var f := load(shader_path)
+	var spirv: RDShaderSPIRV = f.get_spirv()
+	p.shader = rd.shader_create_from_spirv(spirv)
+
+	p.pipeline = rd.compute_pipeline_create(p.shader)
+
+	pipelines.append(p)
+
+	return len(pipelines) - 1
+
+
+func bind_pipeline(pipeline_index: int) -> void:
+	bound_pipeline = pipeline_index

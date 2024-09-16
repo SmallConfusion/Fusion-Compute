@@ -3,16 +3,14 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-layout(r32f, binding = 0) restrict readonly uniform image2D trailmap_i;
-layout(r32f, binding = 1) restrict writeonly uniform image2D trailmap_o;
+layout(r32f, binding = 1) restrict readonly uniform image2D trailmap_i;
+layout(r32f, binding = 2) restrict writeonly uniform image2D trailmap_o;
 
 layout(push_constant) uniform PushConstants {
 	float evaporation;
 	float diffusion;
 }
 pc;
-
-
 
 void main() {
 	ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
@@ -28,10 +26,10 @@ void main() {
 	v -= v * pc.diffusion * 4.0;
 	v *= pc.evaporation;
 
-	v += imageLoad(trailmap_i, coords + ivec2(1, 0)).r * pc.diffusion;
-	v += imageLoad(trailmap_i, coords + ivec2(-1, 0)).r * pc.diffusion;
-	v += imageLoad(trailmap_i, coords + ivec2(0, 1)).r * pc.diffusion;
-	v += imageLoad(trailmap_i, coords + ivec2(0, -1)).r * pc.diffusion;
+	v += imageLoad(trailmap_i, ivec2(mod(coords + ivec2(1, 0), dims))).r * pc.diffusion;
+	v += imageLoad(trailmap_i, ivec2(mod(coords + ivec2(-1, 0), dims))).r * pc.diffusion;
+	v += imageLoad(trailmap_i, ivec2(mod(coords + ivec2(0, 1), dims))).r * pc.diffusion;
+	v += imageLoad(trailmap_i, ivec2(mod(coords + ivec2(0, -1), dims))).r * pc.diffusion;
 
 	v = max(v, 0);
 
