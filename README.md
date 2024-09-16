@@ -1,6 +1,6 @@
 # Fusion Compute
 
-This is an addon for Godot 4.3 designed to make using compute shader less painful.
+This is an addon for Godot designed to make using compute shader less painful. Supports Godot 4.0 - 4.4dev2 and probably future releases.
 
 When using compute shaders normally, you have to write many lines of boilerplate just to make a basic "hello world" program. I wrote this addon to fix that.
 

@@ -125,7 +125,7 @@ func submit(push_constant := PackedByteArray()) -> void:
 
 	var p := _pipelines[_bound_pipeline]
 
-	if not p.uniform_set:
+	if not p.uniform_set.is_valid():
 		p.uniform_set = _rd.uniform_set_create(_uniforms, p.shader, 0)
 
 	var compute_list = _rd.compute_list_begin()
