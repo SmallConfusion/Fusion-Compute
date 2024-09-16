@@ -109,7 +109,7 @@ func get_image(binding: int) -> PackedByteArray:
 	return rd.texture_get_data(buffers[binding], 0)
 
 
-## Submits the compute shader.
+## Submits the compute shader. If a PackedByteArray of your push constants is provided, they will be used.
 func submit(push_bytes := PackedByteArray()) -> void:
 	lock = true
 
