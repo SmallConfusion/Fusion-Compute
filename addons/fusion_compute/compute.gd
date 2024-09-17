@@ -109,6 +109,32 @@ func create_image(width: int, height: int, format: RenderingDevice.DataFormat, u
 	return binding
 
 
+## Initializes an image with the provided format. This function does not assign anything to this image, update_image() should be called after this to provide image data. Returns the binding that this image was created on.
+##
+## When creating data buffers or images, they should be created in binding order, as the first one
+## created will be binding = 0, the second one will be binding = 1, and so on.
+func create_image_from_format(format: RDTextureFormat) -> int:
+	if _lock:
+		printerr("Tried to create data buffer after run")
+		return -1
+
+	var binding = len(_uniforms)
+
+	var image_buffer := _rd.texture_create(format, RDTextureView.new())
+
+	var image_uniform := RDUniform.new()
+	image_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	image_uniform.binding = binding
+	image_uniform.add_id(image_buffer)
+
+	_buffers.append(image_buffer)
+	_uniforms.append(image_uniform)
+
+	return binding
+
+
+
+
 ## Updates image data on the provided binding.
 func update_image(binding: int, data: PackedByteArray) -> void:
 	_rd.texture_update(_buffers[binding], 0, data)
