@@ -133,8 +133,6 @@ func create_image_from_format(format: RDTextureFormat) -> int:
 	return binding
 
 
-
-
 ## Updates image data on the provided binding.
 func update_image(binding: int, data: PackedByteArray) -> void:
 	_rd.texture_update(_buffers[binding], 0, data)
