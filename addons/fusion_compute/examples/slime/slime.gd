@@ -43,7 +43,8 @@ func _ready() -> void:
 
 		RenderingDevice.TEXTURE_USAGE_STORAGE_BIT + \
 		RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT + \
-		RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT
+		RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT + \
+		RenderingDevice.TEXTURE_USAGE_CAN_COPY_TO_BIT
 	)
 
 	compute.create_image(
@@ -52,7 +53,8 @@ func _ready() -> void:
 		RenderingDevice.DATA_FORMAT_R32_SFLOAT,
 
 		RenderingDevice.TEXTURE_USAGE_STORAGE_BIT + \
-		RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT
+		RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT + \
+		RenderingDevice.TEXTURE_USAGE_CAN_COPY_TO_BIT
 	)
 
 	
@@ -74,6 +76,13 @@ func _process(_delta: float) -> void:
 	for child in get_children():
 		if child is TextureRect:
 			child.texture = texture
+	
+	if Input.is_action_just_pressed("ui_accept"):
+		compute.clear_image(1, Color(0, 0, 0, 0))
+		compute.clear_image(2, Color(0, 0, 0, 0))
+
+		compute.update_data(0, _agents_circle().to_byte_array())
+
 
 
 func _agents_random() -> PackedFloat32Array:

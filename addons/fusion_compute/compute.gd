@@ -143,6 +143,11 @@ func get_image(binding: int) -> PackedByteArray:
 	return _rd.texture_get_data(_buffers[binding], 0)
 
 
+## Clears the image data on the provided binding.
+func clear_image(binding: int, color: Color) -> void:
+	_rd.texture_clear(_buffers[binding], color, 0, 1, 0, 1)
+
+
 ## Submits the compute shader. If a PackedByteArray of your push constants is provided, they will be passed to the shader.
 func submit(push_constant := PackedByteArray()) -> void:
 	_lock = true
