@@ -1,5 +1,9 @@
 class_name Compute
 ## Compute shader helper.
+##
+## When creating data buffers or images, they should be created in binding order, as the first one
+## created will be binding = 0, the second one will be binding = 1, and so on.
+
 
 class _Pipeline:
 	var shader: RID
@@ -20,11 +24,7 @@ var _rd: RenderingDevice
 
 var _uniforms: Array[RDUniform] = []
 var _buffers: Array[RID] = []
-
 var _pipelines: Array[_Pipeline] = []
-
-var _bound_pipeline := 0
-
 
 var _lock := false
 
@@ -42,10 +42,15 @@ static func create(shader_path: String, wg_count_x := 1, wg_count_y := 1, wg_cou
 	return c
 
 
+
+## Changes the work group count on a pipeline. The default pipeline is 0.
+func update_wg_count(wg_count_x := 1, wg_count_y := 1, wg_count_z := 1, pipeline := 0) -> void:
+	_pipelines[pipeline].wgx = wg_count_x
+	_pipelines[pipeline].wgy = wg_count_y
+	_pipelines[pipeline].wgz = wg_count_z
+
+
 ## Creates a data buffer from the provided PackedByteArray. It returns the binding that this buffer is on.
-##
-## When creating data buffers or images, they should be created in binding order, as the first one
-## created will be binding = 0, the second one will be binding = 1, and so on.
 func create_data(data: PackedByteArray) -> int:
 	if _lock:
 		printerr("Tried to create data buffer after run")
@@ -80,9 +85,6 @@ func get_data(binding: int, offset := 0, size := 0) -> PackedByteArray:
 
 
 ## Initializes an image. This function does not assign anything to this image, update_image() should be called after this to provide image data. Returns the binding that this image was created on.
-##
-## When creating data buffers or images, they should be created in binding order, as the first one
-## created will be binding = 0, the second one will be binding = 1, and so on.
 func create_image(width: int, height: int, format: RenderingDevice.DataFormat, usage_bits: int) -> int:
 	if _lock:
 		printerr("Tried to create data buffer after run")
@@ -110,9 +112,6 @@ func create_image(width: int, height: int, format: RenderingDevice.DataFormat, u
 
 
 ## Initializes an image with the provided format. This function does not assign anything to this image, update_image() should be called after this to provide image data. Returns the binding that this image was created on.
-##
-## When creating data buffers or images, they should be created in binding order, as the first one
-## created will be binding = 0, the second one will be binding = 1, and so on.
 func create_image_from_format(format: RDTextureFormat) -> int:
 	if _lock:
 		printerr("Tried to create data buffer after run")
@@ -148,11 +147,11 @@ func clear_image(binding: int, color: Color) -> void:
 	_rd.texture_clear(_buffers[binding], color, 0, 1, 0, 1)
 
 
-## Submits the compute shader. If a PackedByteArray of your push constants is provided, they will be passed to the shader.
-func submit(push_constant := PackedByteArray()) -> void:
+## Submits the compute shader on a given pipeline, default pipeline is 0. If a PackedByteArray of your push constants is provided, they will be passed to the shader.
+func submit(push_constant := PackedByteArray(), pipeline := 0) -> void:
 	_lock = true
 
-	var p := _pipelines[_bound_pipeline]
+	var p := _pipelines[pipeline]
 
 	if not p.uniform_set.is_valid():
 		p.uniform_set = _rd.uniform_set_create(_uniforms, p.shader, 0)
@@ -209,7 +208,3 @@ func create_pipeline(shader_path: String, wg_count_x := 1, wg_count_y := 1, wg_c
 
 	return len(_pipelines) - 1
 
-
-## Preps the pipeline for use. This function runs nothing, use submit() after setting the pipeline to run the pipeline.
-func bind_pipeline(pipeline_index: int) -> void:
-	_bound_pipeline = pipeline_index

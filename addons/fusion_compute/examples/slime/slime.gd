@@ -59,12 +59,10 @@ func _ready() -> void:
 
 	
 func _process(_delta: float) -> void:
-	compute.bind_pipeline(0)
-	compute.submit(PackedFloat32Array([trail_strength, float(width), float(height), sensor_angle, sensor_distance, speed, turning, random, float(Time.get_ticks_msec()) / 1000.0]).to_byte_array())
+	compute.submit(PackedFloat32Array([trail_strength, float(width), float(height), sensor_angle, sensor_distance, speed, turning, random, float(Time.get_ticks_msec()) / 1000.0]).to_byte_array(), 0)
 	compute.sync()
 
-	compute.bind_pipeline(1)
-	compute.submit(PackedFloat32Array([evaporation, diffusion]).to_byte_array())
+	compute.submit(PackedFloat32Array([evaporation, diffusion]).to_byte_array(), 1)
 	compute.sync()
 
 	var image_data := compute.get_image(2)
