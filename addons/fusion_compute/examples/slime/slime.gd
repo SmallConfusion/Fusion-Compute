@@ -27,7 +27,7 @@ var compute: Compute
 
 
 func _ready() -> void:
-	compute = Compute.create("res://addons/fusion_compute/examples/slime/agents.glsl", wg_count)
+	compute = Compute.create("res://addons/fusion_compute/examples/slime/agents.glsl", wg_count, 1, 1, true)
 
 	@warning_ignore("integer_division")
 	compute.create_pipeline("res://addons/fusion_compute/examples/slime/diffuse.glsl", width / 8, height / 8)
@@ -52,8 +52,16 @@ func _ready() -> void:
 		RenderingDevice.DATA_FORMAT_R32_SFLOAT,
 
 		RenderingDevice.TEXTURE_USAGE_STORAGE_BIT + \
-		RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT
+		RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT + \
+		RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT
 	)
+	
+	for child in get_children():
+		if child is TextureRect:
+			var tex = child.texture
+			
+			if tex is Texture2DRD:
+				tex.texture_rd_rid = compute.get_image_rid(2)
 
 	
 func _process(_delta: float) -> void:
@@ -65,14 +73,7 @@ func _process(_delta: float) -> void:
 
 	var image_data := compute.get_image(2)
 	compute.update_image(1, image_data)
-
-	var image := Image.create_from_data(width, height, false, Image.FORMAT_RF, image_data)
-	var texture := ImageTexture.create_from_image(image)
 	
-	for child in get_children():
-		if child is TextureRect:
-			child.texture = texture
-
 
 func _agents_random() -> PackedFloat32Array:
 	var a := PackedFloat32Array()

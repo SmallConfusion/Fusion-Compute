@@ -33,10 +33,16 @@ var _lock := false
 ##
 ## Use this function rather than Compute.new(), as this runs necessary initialization steps.
 ## wg_count_x, y, and z are the number of groups that this compute shader is dispatched on.
-static func create(shader_path: String, wg_count_x := 1, wg_count_y := 1, wg_count_z := 1) -> Compute:
+## use_global_rd uses the global rendering device rather than creating a local one.
+## I don't know the consequences of this but it allows you to use a Texture2DRD.
+static func create(shader_path: String, wg_count_x := 1, wg_count_y := 1, wg_count_z := 1, use_global_rd := false) -> Compute:
 	var c := Compute.new()
 
-	c._rd = RenderingServer.create_local_rendering_device()
+	if use_global_rd:
+		c._rd = RenderingServer.get_rendering_device()
+	else:
+		c._rd = RenderingServer.create_local_rendering_device()
+
 	c.create_pipeline(shader_path, wg_count_x, wg_count_y, wg_count_z)
 	
 	return c
@@ -145,6 +151,13 @@ func get_image(binding: int) -> PackedByteArray:
 ## Clears the image data on the provided binding.
 func clear_image(binding: int, color: Color) -> void:
 	_rd.texture_clear(_buffers[binding], color, 0, 1, 0, 1)
+
+
+## Returns the rid of the image on the provided binding, for use with a Texture2DRD.
+## Make sure that this compute object was created with use_global_rd = true, otherwise
+## this will not work.
+func get_image_rid(binding: int) -> RID:
+	return _buffers[binding]
 
 
 ## Submits the compute shader on a given pipeline, default pipeline is 0. If a PackedByteArray of your push constants is provided, they will be passed to the shader.
