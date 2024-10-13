@@ -6,27 +6,13 @@ class_name Compute
 ## binding = 1, and so on.
 
 
-class _Pipeline:
-	var shader: RID
-	var pipeline: RID
-	var uniform_set: RID
-
-	var wgx: int
-	var wgy: int
-	var wgz: int
-
-	func cleanup(rd: RenderingDevice):
-		rd.free_rid(shader)
-		rd.free_rid(pipeline)
-		rd.free_rid(uniform_set)
-
-
 var _rd: RenderingDevice
 
 var _uniforms: Array[RDUniform] = []
-var _buffers: Array[RID] = []
+var _buffers: Array[_Buffer] = []
 var _pipelines: Array[_Pipeline] = []
 
+var _uses_global_rd: bool
 var _lock := false
 
 
@@ -46,6 +32,8 @@ static func create(
 		) -> Compute:
 
 	var c := Compute.new()
+
+	c._uses_global_rd = use_global_rd
 
 	if use_global_rd:
 		c._rd = RenderingServer.get_rendering_device()
@@ -73,9 +61,7 @@ func update_wg_count(
 ## Creates a data buffer from the provided PackedByteArray. It returns the
 ## binding that this buffer is on.
 func create_data(data: PackedByteArray) -> int:
-	if _lock:
-		printerr("Tried to create data buffer after run")
-		return -1
+	assert(!_lock, "Attempted to create new data buffer after running.")
 
 	var binding := len(_uniforms)
 
@@ -83,11 +69,14 @@ func create_data(data: PackedByteArray) -> int:
 	uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_STORAGE_BUFFER
 	uniform.binding = binding
 
-	var buffer := _rd.storage_buffer_create(data.size(), data)
-	uniform.add_id(buffer)
+	var buffer := _Buffer.new()
+	buffer.type = _Buffer.Usage.DATA
 
-	_uniforms.append(uniform)
+	buffer.rid = _rd.storage_buffer_create(data.size(), data)
+	uniform.add_id(buffer.rid)
+
 	_buffers.append(buffer)
+	_uniforms.append(uniform)
 
 	return binding
 
@@ -99,16 +88,19 @@ func update_data(
 				offset := 0,
 				size := -1
 			) -> void:
-
+	
+	_validate_binding(binding, _Buffer.Usage.DATA)
+	
 	if size == -1:
 		size = data.size()
 
-	_rd.buffer_update(_buffers[binding], 0, size, data)
+	_rd.buffer_update(_buffers[binding].rid, 0, size, data)
 
 
 ## Gets the data from the provided buffer.
 func get_data(binding: int, offset := 0, size := 0) -> PackedByteArray:
-	return _rd.buffer_get_data(_buffers[binding], offset, size)
+	_validate_binding(binding, _Buffer.Usage.DATA)
+	return _rd.buffer_get_data(_buffers[binding].rid, offset, size)
 
 
 ## Initializes an image. This function does not assign anything to this image,
@@ -121,9 +113,7 @@ func create_image(
 				usage_bits: int
 			) -> int:
 
-	if _lock:
-		printerr("Tried to create data buffer after run")
-		return -1
+	assert(!_lock, "Attempted to create new image buffer after running.")
 
 	var image_format := RDTextureFormat.new()
 	image_format.width = width
@@ -133,15 +123,18 @@ func create_image(
 
 	var binding = len(_uniforms)
 
-	var image_buffer := _rd.texture_create(image_format, RDTextureView.new())
+	var buffer := _Buffer.new()
 
-	var image_uniform := RDUniform.new()
-	image_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
-	image_uniform.binding = binding
-	image_uniform.add_id(image_buffer)
+	buffer.type = _Buffer.Usage.IMAGE
+	buffer.rid = _rd.texture_create(image_format, RDTextureView.new())
 
-	_buffers.append(image_buffer)
-	_uniforms.append(image_uniform)
+	var uniform := RDUniform.new()
+	uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	uniform.binding = binding
+	uniform.add_id(buffer.rid)
+
+	_buffers.append(buffer)
+	_uniforms.append(uniform)
 
 	return binding
 
@@ -150,45 +143,57 @@ func create_image(
 ## anything to this image, update_image() should be called after this to provide
 ## image data. Returns the binding that this image was created on.
 func create_image_from_format(format: RDTextureFormat) -> int:
-	if _lock:
-		printerr("Tried to create data buffer after run")
-		return -1
+	assert(!_lock, "Attempted to create new image buffer after running.")
 
 	var binding = len(_uniforms)
 
-	var image_buffer := _rd.texture_create(format, RDTextureView.new())
+	var buffer := _Buffer.new()
 
-	var image_uniform := RDUniform.new()
-	image_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
-	image_uniform.binding = binding
-	image_uniform.add_id(image_buffer)
+	buffer.type = _Buffer.Usage.IMAGE
 
-	_buffers.append(image_buffer)
-	_uniforms.append(image_uniform)
+	buffer.rid = _rd.texture_create(format, RDTextureView.new())
+
+	var uniform := RDUniform.new()
+	uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	uniform.binding = binding
+	uniform.add_id(buffer.rid)
+
+	_buffers.append(buffer)
+	_uniforms.append(uniform)
 
 	return binding
 
 
 ## Updates image data on the provided binding.
 func update_image(binding: int, data: PackedByteArray) -> void:
-	_rd.texture_update(_buffers[binding], 0, data)
+	_validate_binding(binding, _Buffer.Usage.IMAGE)
+	_rd.texture_update(_buffers[binding].rid, 0, data)
 
 
 ## Gets the image data from the provided binding.
 func get_image(binding: int) -> PackedByteArray:
-	return _rd.texture_get_data(_buffers[binding], 0)
+	_validate_binding(binding, _Buffer.Usage.IMAGE)
+	return _rd.texture_get_data(_buffers[binding].rid, 0)
 
 
 ## Clears the image data on the provided binding.
 func clear_image(binding: int, color: Color) -> void:
-	_rd.texture_clear(_buffers[binding], color, 0, 1, 0, 1)
+	_validate_binding(binding, _Buffer.Usage.IMAGE)
+	_rd.texture_clear(_buffers[binding].rid, color, 0, 1, 0, 1)
 
 
 ## Returns the rid of the image on the provided binding, for use with a
 ## Texture2DRD. Make sure that this compute object was created with
 ## use_global_rd = true, otherwise this will not work.
 func get_image_rid(binding: int) -> RID:
-	return _buffers[binding]
+	_validate_binding(binding, _Buffer.Usage.IMAGE)
+
+	assert(
+			_uses_global_rd,
+			"Compute needs to be created with use_global_rd = true to use get_image_rid()"
+		)
+
+	return _buffers[binding].rid
 
 
 ## Submits the compute shader on a given pipeline, the default pipeline is 0.
@@ -257,3 +262,46 @@ func create_pipeline(shader_path: String, wg_count_x := 1, wg_count_y := 1, wg_c
 	_pipelines.append(p)
 
 	return len(_pipelines) - 1
+
+
+func _validate_binding(binding: int, type: _Buffer.Usage):
+	assert(len(_buffers) > binding, "Binding %d does not exist!" % binding)
+
+	assert(
+			_buffers[binding].type == type,
+			"Buffer %d is of type %s, not %s" % [
+					binding,
+					_Buffer.usage_string(_buffers[binding].type),
+					_Buffer.usage_string(type)
+				]
+		)
+
+
+class _Pipeline:
+	var shader: RID
+	var pipeline: RID
+	var uniform_set: RID
+
+	var wgx: int
+	var wgy: int
+	var wgz: int
+
+	func cleanup(rd: RenderingDevice):
+		rd.free_rid(shader)
+		rd.free_rid(pipeline)
+		rd.free_rid(uniform_set)
+
+class _Buffer:
+	enum Usage {DATA, IMAGE}
+
+	var rid: RID
+	var type: Usage
+
+	static func usage_string(usage: Usage) -> String:
+		match usage:
+			Usage.DATA:
+				return "data"
+			Usage.IMAGE:
+				return "image"
+			_:
+				return "unknown"
