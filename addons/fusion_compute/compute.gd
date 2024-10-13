@@ -113,30 +113,13 @@ func create_image(
 				usage_bits: int
 			) -> int:
 
-	assert(!_lock, "Attempted to create new image buffer after running.")
-
 	var image_format := RDTextureFormat.new()
 	image_format.width = width
 	image_format.height = height
 	image_format.format = format
 	image_format.usage_bits = usage_bits
 
-	var binding = len(_uniforms)
-
-	var buffer := _Buffer.new()
-
-	buffer.type = _Buffer.Usage.IMAGE
-	buffer.rid = _rd.texture_create(image_format, RDTextureView.new())
-
-	var uniform := RDUniform.new()
-	uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
-	uniform.binding = binding
-	uniform.add_id(buffer.rid)
-
-	_buffers.append(buffer)
-	_uniforms.append(uniform)
-
-	return binding
+	return create_image_from_format(image_format)
 
 
 ## Initializes an image with the provided format. This function does not assign
