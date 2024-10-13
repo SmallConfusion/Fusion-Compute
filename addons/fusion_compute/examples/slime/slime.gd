@@ -27,10 +27,16 @@ var compute: Compute
 
 
 func _ready() -> void:
-	compute = Compute.create("res://addons/fusion_compute/examples/slime/agents.glsl", wg_count, 1, 1, true)
+	compute = Compute.create(
+			"res://addons/fusion_compute/examples/slime/agents.glsl",
+			wg_count, 1, 1, true
+		)
 
 	@warning_ignore("integer_division")
-	compute.create_pipeline("res://addons/fusion_compute/examples/slime/diffuse.glsl", width / 8, height / 8)
+	compute.create_pipeline(
+			"res://addons/fusion_compute/examples/slime/diffuse.glsl",
+			width / 8, height / 8
+		)
 
 	var agent_data := _agents_circle().to_byte_array()
 
@@ -65,10 +71,27 @@ func _ready() -> void:
 
 	
 func _process(_delta: float) -> void:
-	compute.submit(PackedFloat32Array([trail_strength, float(width), float(height), sensor_angle, sensor_distance, speed, turning, random, float(Time.get_ticks_msec()) / 1000.0]).to_byte_array(), 0)
+	compute.submit(
+			PackedFloat32Array([
+					trail_strength,
+					float(width),
+					float(height),
+					sensor_angle,
+					sensor_distance,
+					speed,
+					turning,
+					random,
+					float(Time.get_ticks_msec()) / 1000.0
+				]).to_byte_array(),
+			0
+		)
+
 	compute.sync()
 
-	compute.submit(PackedFloat32Array([evaporation, diffusion]).to_byte_array(), 1)
+	compute.submit(
+			PackedFloat32Array([evaporation, diffusion]).to_byte_array(), 1
+		)
+
 	compute.sync()
 
 	var image_data := compute.get_image(2)
@@ -95,7 +118,8 @@ func _agents_circle() -> PackedFloat32Array:
 	var center := Vector2(width, height) / 2
 
 	for i in range(agent_count):
-		var pos := Vector2.from_angle(randf() * TAU) * radius * sqrt(randf()) + center
+		var angle := Vector2.from_angle(randf() * TAU)
+		var pos := angle * radius * sqrt(randf()) + center
 
 		a[i * 3] = pos.x;
 		a[i * 3 + 1] = pos.y;

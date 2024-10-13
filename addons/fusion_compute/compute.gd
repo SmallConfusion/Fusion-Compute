@@ -1,8 +1,9 @@
 class_name Compute
 ## Compute shader helper.
 ##
-## When creating data buffers or images, they should be created in binding order, as the first one
-## created will be binding = 0, the second one will be binding = 1, and so on.
+## When creating data buffers or images, they should be created in binding
+## order, as the first one created will be binding = 0, the second one will be
+## binding = 1, and so on.
 
 
 class _Pipeline:
@@ -31,11 +32,19 @@ var _lock := false
 
 ## Creates an instance of Compute.
 ##
-## Use this function rather than Compute.new(), as this runs necessary initialization steps.
-## wg_count_x, y, and z are the number of groups that this compute shader is dispatched on.
-## use_global_rd uses the global rendering device rather than creating a local one.
-## I don't know the consequences of this but it allows you to use a Texture2DRD.
-static func create(shader_path: String, wg_count_x := 1, wg_count_y := 1, wg_count_z := 1, use_global_rd := false) -> Compute:
+## Use this function rather than Compute.new(), as this runs necessary
+## initialization steps. wg_count_x, y, and z are the number of groups that this
+## compute shader is dispatched on. use_global_rd uses the global rendering
+## device rather than creating a local one. I don't know the consequences of
+## this but it allows you to use a Texture2DRD.
+static func create(
+			shader_path: String,
+			wg_count_x := 1,
+			wg_count_y := 1,
+			wg_count_z := 1,
+			use_global_rd := false
+		) -> Compute:
+
 	var c := Compute.new()
 
 	if use_global_rd:
@@ -48,15 +57,21 @@ static func create(shader_path: String, wg_count_x := 1, wg_count_y := 1, wg_cou
 	return c
 
 
-
 ## Changes the work group count on a pipeline. The default pipeline is 0.
-func update_wg_count(wg_count_x := 1, wg_count_y := 1, wg_count_z := 1, pipeline := 0) -> void:
+func update_wg_count(
+				wg_count_x := 1,
+				wg_count_y := 1,
+				wg_count_z := 1,
+				pipeline := 0
+			) -> void:
+
 	_pipelines[pipeline].wgx = wg_count_x
 	_pipelines[pipeline].wgy = wg_count_y
 	_pipelines[pipeline].wgz = wg_count_z
 
 
-## Creates a data buffer from the provided PackedByteArray. It returns the binding that this buffer is on.
+## Creates a data buffer from the provided PackedByteArray. It returns the
+## binding that this buffer is on.
 func create_data(data: PackedByteArray) -> int:
 	if _lock:
 		printerr("Tried to create data buffer after run")
@@ -78,7 +93,13 @@ func create_data(data: PackedByteArray) -> int:
 
 
 ## Updates data on the provided buffer.
-func update_data(binding: int, data: PackedByteArray, offset := 0, size := -1) -> void:
+func update_data(
+				binding: int,
+				data: PackedByteArray,
+				offset := 0,
+				size := -1
+			) -> void:
+
 	if size == -1:
 		size = data.size()
 
@@ -90,8 +111,16 @@ func get_data(binding: int, offset := 0, size := 0) -> PackedByteArray:
 	return _rd.buffer_get_data(_buffers[binding], offset, size)
 
 
-## Initializes an image. This function does not assign anything to this image, update_image() should be called after this to provide image data. Returns the binding that this image was created on.
-func create_image(width: int, height: int, format: RenderingDevice.DataFormat, usage_bits: int) -> int:
+## Initializes an image. This function does not assign anything to this image,
+## update_image() should be called after this to provide image data. Returns the
+## binding that this image was created on.
+func create_image(
+				width: int,
+				height: int,
+				format: RenderingDevice.DataFormat,
+				usage_bits: int
+			) -> int:
+
 	if _lock:
 		printerr("Tried to create data buffer after run")
 		return -1
@@ -117,7 +146,9 @@ func create_image(width: int, height: int, format: RenderingDevice.DataFormat, u
 	return binding
 
 
-## Initializes an image with the provided format. This function does not assign anything to this image, update_image() should be called after this to provide image data. Returns the binding that this image was created on.
+## Initializes an image with the provided format. This function does not assign
+## anything to this image, update_image() should be called after this to provide
+## image data. Returns the binding that this image was created on.
 func create_image_from_format(format: RDTextureFormat) -> int:
 	if _lock:
 		printerr("Tried to create data buffer after run")
@@ -153,14 +184,16 @@ func clear_image(binding: int, color: Color) -> void:
 	_rd.texture_clear(_buffers[binding], color, 0, 1, 0, 1)
 
 
-## Returns the rid of the image on the provided binding, for use with a Texture2DRD.
-## Make sure that this compute object was created with use_global_rd = true, otherwise
-## this will not work.
+## Returns the rid of the image on the provided binding, for use with a
+## Texture2DRD. Make sure that this compute object was created with
+## use_global_rd = true, otherwise this will not work.
 func get_image_rid(binding: int) -> RID:
 	return _buffers[binding]
 
 
-## Submits the compute shader on a given pipeline, default pipeline is 0. If a PackedByteArray of your push constants is provided, they will be passed to the shader.
+## Submits the compute shader on a given pipeline, the default pipeline is 0.
+## If a PackedByteArray of your push constants is provided, they will be passed
+## to the shader.
 func submit(push_constant := PackedByteArray(), pipeline := 0) -> void:
 	_lock = true
 
@@ -177,7 +210,11 @@ func submit(push_constant := PackedByteArray(), pipeline := 0) -> void:
 		while push_constant.size() % 16 != 0:
 			push_constant.append(0)
 
-		_rd.compute_list_set_push_constant(compute_list, push_constant, push_constant.size())
+		_rd.compute_list_set_push_constant(
+				compute_list,
+				push_constant,
+				push_constant.size()
+			)
 
 	_rd.compute_list_dispatch(compute_list, p.wgx, p.wgy, p.wgz)
 	_rd.compute_list_end()
@@ -190,7 +227,8 @@ func sync() -> void:
 	_rd.sync()
 
 
-## Performs cleanup, freeing data from the gpu. This should be called when you're done with the Compute object, to avoid memory leaks.
+## Performs cleanup, freeing data from the gpu. This should be called when
+## you're finished with the Compute object, to avoid memory leaks.
 func cleanup() -> void:
 	for p in _pipelines:
 		p.cleanup(_rd)
@@ -201,9 +239,8 @@ func cleanup() -> void:
 	_rd.free()
 
 
-## Creates another pipeline on this Compute object. Buffers are shared between all pipelines.
-##
-## Advanced use.
+## Creates another pipeline on this Compute object. Buffers are shared between
+## all pipelines.
 func create_pipeline(shader_path: String, wg_count_x := 1, wg_count_y := 1, wg_count_z := 1) -> int:
 	var p := _Pipeline.new()
 	
@@ -220,4 +257,3 @@ func create_pipeline(shader_path: String, wg_count_x := 1, wg_count_y := 1, wg_c
 	_pipelines.append(p)
 
 	return len(_pipelines) - 1
-

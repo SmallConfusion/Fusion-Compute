@@ -2,7 +2,10 @@ extends Node
 
 
 func _ready() -> void:
-	var c := Compute.create("res://addons/fusion_compute/examples/array_multiply/array_multiply.glsl", 1, 1, 1)
+	var c := Compute.create(
+			"res://addons/fusion_compute/examples/array_multiply/array_multiply.glsl",
+			1, 1, 1
+		)
 
 	var data := PackedFloat32Array(range(64))
 
