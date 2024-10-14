@@ -27,4 +27,4 @@ Shaders themselves are not changed by this plugin, they are written exactly the 
 
 ## Documentation
 
-Documentation of functions and usage can be found by reading the generated documentation of the Compute class in the Godot engine. Reading the [multiply_arrays](./addons/fusion_compute/examples/array_multiply/) and [generate_image](./addons/fusion_compute/examples/generate_image/) will be helpful too. The [slime](./addons/fusion_compute/examples/slime/) example is a more complex example.
+Documentation of functions and usage can be found by reading the generated documentation of the Compute class in the Godot engine. Reading the [multiply_arrays](./addons/fusion_compute/examples/array_multiply/) and [generate_image](./addons/fusion_compute/examples/generate_image/) will be helpful too. The [slime](./addons/fusion_compute/examples/slime/) example is more complex.
