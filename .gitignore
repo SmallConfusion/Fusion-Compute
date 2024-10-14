@@ -1,3 +1,5 @@
-# Godot 4+ specific ignores
+# Godot 4
 .godot/
 
+# Build result from python script
+fusion-compute-plugin.zip
