@@ -18,11 +18,31 @@ var _lock := false
 
 ## Creates an instance of Compute.
 ##
-## Use this function rather than Compute.new(), as this runs necessary
-## initialization steps. wg_count_x, y, and z are the number of groups that this
-## compute shader is dispatched on. use_global_rd uses the global rendering
-## device rather than creating a local one. I don't know the consequences of
-## this but it allows you to use a Texture2DRD.
+## `wg_count_x`, `y`, and `z` are the number of groups that this
+## compute shader is dispatched on.
+##
+## `use_global_rd` uses the global rendering device rather than creating a local
+## one. I don't know the consequences of this but it allows you to use a
+## Texture2DRD. It causes a bunch of error messages in 4.4 in the slime example,
+## not sure how to properly use it.
+func _init(
+			shader_path: String,
+			wg_count_x := 1,
+			wg_count_y := 1,
+			wg_count_z := 1,
+			use_global_rd := false,
+		) -> void:
+	_uses_global_rd = use_global_rd
+
+	if use_global_rd:
+		_rd = RenderingServer.get_rendering_device()
+	else:
+		_rd = RenderingServer.create_local_rendering_device()
+	
+	create_pipeline(shader_path, wg_count_x, wg_count_y, wg_count_z)
+	
+## Creates a new Compute Obejct.
+## @deprecated: Use `Compute.new()` instead
 static func create(
 			shader_path: String,
 			wg_count_x := 1,
@@ -31,18 +51,13 @@ static func create(
 			use_global_rd := false
 		) -> Compute:
 
-	var c := Compute.new()
-
-	c._uses_global_rd = use_global_rd
-
-	if use_global_rd:
-		c._rd = RenderingServer.get_rendering_device()
-	else:
-		c._rd = RenderingServer.create_local_rendering_device()
-
-	c.create_pipeline(shader_path, wg_count_x, wg_count_y, wg_count_z)
-	
-	return c
+	return Compute.new(
+			shader_path,
+			wg_count_x,
+			wg_count_y,
+			wg_count_z,
+			use_global_rd
+		)
 
 
 ## Changes the work group count on a pipeline. The default pipeline is 0.

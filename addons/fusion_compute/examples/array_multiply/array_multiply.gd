@@ -2,7 +2,7 @@ extends Node
 
 
 func _ready() -> void:
-	var c := Compute.create(
+	var c := Compute.new(
 			"res://addons/fusion_compute/examples/array_multiply/array_multiply.glsl",
 			1, 1, 1
 		)

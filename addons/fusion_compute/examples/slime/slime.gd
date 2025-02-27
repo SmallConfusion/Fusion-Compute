@@ -1,5 +1,9 @@
 extends Node
 
+# This causes a whole bunch of errors in 4.4 because we are using the global
+# RenderingDevice. I don't know what changed but it still seems to work and I
+# can't be bothered to fix it right now.
+
 const width := 1024
 const height := 1024
 
@@ -27,7 +31,7 @@ var compute: Compute
 
 
 func _ready() -> void:
-	compute = Compute.create(
+	compute = Compute.new(
 			"res://addons/fusion_compute/examples/slime/agents.glsl",
 			wg_count, 1, 1, true
 		)
@@ -86,13 +90,13 @@ func _process(_delta: float) -> void:
 			0
 		)
 
-	compute.sync()
+	compute. sync ()
 
 	compute.submit(
 			PackedFloat32Array([evaporation, diffusion]).to_byte_array(), 1
 		)
 
-	compute.sync()
+	compute. sync ()
 
 	var image_data := compute.get_image(2)
 	compute.update_image(1, image_data)

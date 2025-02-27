@@ -1,6 +1,6 @@
 # Fusion Compute
 
-This is an plugin for Godot designed to make using compute shader less painful. Supports Godot 4.0 - 4.4dev2 and probably future releases.
+This is an plugin for Godot designed to make using compute shader less painful. Supports Godot 4.3 - 4.4rc2, most likely works on all 4.x versions.
 
 When using compute shaders normally, you have to write many lines of boilerplate just to make a basic "hello world" program. I wrote this plugin to fix that.
 
@@ -8,11 +8,11 @@ For example, [the godot docs tutorial for compute shaders](https://docs.godoteng
 
 ```gdscript
 func _ready() -> void:
-	var compute := Compute.create("res://shader.glsl", 1, 1, 1)
+	var compute := Compute.new("res://shader.glsl", 1, 1, 1)
 
 	var data := PackedFloat32Array(range(16))
 	compute.create_data(data.to_byte_array())
-	
+
 	compute.submit()
 	compute.sync()
 

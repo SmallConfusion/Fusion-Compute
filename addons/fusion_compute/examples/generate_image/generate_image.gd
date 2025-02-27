@@ -4,7 +4,7 @@ const image_size = 512
 
 func _ready() -> void:
 	@warning_ignore("integer_division")
-	var c := Compute.create(
+	var c := Compute.new(
 			"res://addons/fusion_compute/examples/generate_image/generate_image.glsl",
 			image_size / 8, image_size / 8, 1
 		)
