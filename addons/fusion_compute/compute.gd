@@ -19,10 +19,11 @@ var _lock := false
 ## [param wg_count_x], [param y], and [param z] are the number of groups that
 ## this compute shader is dispatched on.[br]
 ##
-## [param use_global_rd] uses the global rendering device rather than creating a
-## local one. I don't know the consequences of this but it allows you to use a
-## [Texture2DRD]. It causes a bunch of error messages in 4.4 in the slime
-## example, I'm not sure how to properly use it.
+## [param use_global_rd] uses the global rendering device rather than creating
+## a local one. This  allows you to use a [Texture2DRD]. Because of things
+## under the hood, sync should not be called and submit doesn't actually
+## call submit on the underlying rendering device, only sets up the compute
+## list, since only local devices can submit and sync.
 func _init(
 			shader_path: String,
 			wg_count_x := 1,
@@ -174,8 +175,8 @@ func clear_image(binding: int, color: Color) -> void:
 
 ## Returns the rid of the image on the provided binding, for use with a
 ## [Texture2DRD]. Make sure that this compute object was created with
-## [code]use_global_rd = true[/code], otherwise this will not work, though doing
-## that seems to cause errors in 4.4.
+## [code]use_global_rd = true[/code], otherwise this will not work. Reminder
+## that in this case `Compute.sync()` should not be called.
 func get_image_rid(binding: int) -> RID:
 	_validate_binding(binding, _Buffer.Usage.IMAGE)
 
@@ -213,11 +214,19 @@ func submit(push_constant := PackedByteArray(), pipeline := 0) -> void:
 
 	_rd.compute_list_dispatch(compute_list, p.wgx, p.wgy, p.wgz)
 	_rd.compute_list_end()
-
-	_rd.submit()
+	
+	if not _uses_global_rd:
+		_rd.submit()
 
 ## Syncs the shader.
 func sync() -> void:
+	if _uses_global_rd:
+		push_warning(
+			"Sync should not be called when using the global RenderingDevice"
+		)
+		
+		return
+	
 	_rd.sync()
 
 ## Performs cleanup, freeing data from the gpu. This should be called when

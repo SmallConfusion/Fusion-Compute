@@ -90,13 +90,9 @@ func _process(_delta: float) -> void:
 			0
 		)
 
-	compute. sync ()
-
 	compute.submit(
 			PackedFloat32Array([evaporation, diffusion]).to_byte_array(), 1
 		)
-
-	compute. sync ()
 
 	var image_data := compute.get_image(2)
 	compute.update_image(1, image_data)

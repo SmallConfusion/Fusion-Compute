@@ -24,7 +24,7 @@ func _ready() -> void:
 
 	var image_data := c.get_image(0)
 	var image := Image.create_from_data(
-			512, 512, false, Image.FORMAT_RGBA8, image_data
+			image_size, image_size, false, Image.FORMAT_RGBA8, image_data
 		)
 
 	$TextureRect.texture = ImageTexture.create_from_image(image)
