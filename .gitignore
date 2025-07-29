@@ -3,3 +3,5 @@
 
 # Build result from python script
 fusion-compute-plugin.zip
+
+*.tmp

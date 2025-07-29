@@ -76,17 +76,17 @@ func _ready() -> void:
 	
 func _process(_delta: float) -> void:
 	compute.submit(
-			PackedFloat32Array([
-					trail_strength,
-					float(width),
-					float(height),
-					sensor_angle,
-					sensor_distance,
-					speed,
-					turning,
-					random,
-					float(Time.get_ticks_msec()) / 1000.0
-				]).to_byte_array(),
+			[
+				trail_strength,
+				float(width),
+				float(height),
+				sensor_angle,
+				sensor_distance,
+				speed,
+				turning,
+				random,
+				float(Time.get_ticks_msec()) / 1000.0,
+			],
 			0
 		)
 

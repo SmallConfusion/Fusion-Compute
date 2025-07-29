@@ -1,6 +1,6 @@
 # Fusion Compute
 
-This is an plugin for Godot designed to make using compute shader less painful. Supports Godot 4.3 - 4.4rc2, most likely works on all 4.x versions.
+This is an plugin for Godot designed to make using compute shader less painful. Supports Godot 4.3 - 4.5 beta 3+, most likely works on all 4.x versions.
 
 When using compute shaders normally, you have to write many lines of boilerplate just to make a basic "hello world" program. I wrote this plugin to fix that.
 

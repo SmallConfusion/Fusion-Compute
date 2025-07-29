@@ -13,7 +13,7 @@ func _ready() -> void:
 	c.create_data(data.to_byte_array())
 
 	print("Submitting")
-	c.submit(PackedFloat32Array([4]).to_byte_array())
+	c.submit([4.0])
 	c.sync()
 	print("Synced")
 

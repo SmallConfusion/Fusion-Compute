@@ -188,9 +188,9 @@ func get_image_rid(binding: int) -> RID:
 	return _buffers[binding].rid
 
 ## Submits the compute shader on a given pipeline, the default pipeline is 0.
-## If a [PackedByteArray] of your push constants is provided, they will be
+## If a [PackedByteArray] or [Array] of your push constants is provided, they will be
 ## passed to the shader.
-func submit(push_constant := PackedByteArray(), pipeline := 0) -> void:
+func submit(push_constant: Variant = PackedByteArray(), pipeline := 0) -> void:
 	_lock = true
 
 	var p := _pipelines[pipeline]
@@ -202,14 +202,23 @@ func submit(push_constant := PackedByteArray(), pipeline := 0) -> void:
 	_rd.compute_list_bind_compute_pipeline(compute_list, p.pipeline)
 	_rd.compute_list_bind_uniform_set(compute_list, p.uniform_set, 0)
 
-	if len(push_constant) != 0:
-		while push_constant.size() % 16 != 0:
-			push_constant.append(0)
+	var computed_pc: PackedByteArray
+	
+	if push_constant is PackedByteArray:
+		computed_pc = push_constant
+	elif push_constant is Array:
+		computed_pc = _array_to_bytes(push_constant)
+	else:
+		push_warning("Push constants must either be an Array or a PackedByteArray")
+
+	if len(computed_pc) != 0:
+		while computed_pc.size() % 16 != 0:
+			computed_pc.append(0)
 
 		_rd.compute_list_set_push_constant(
 				compute_list,
-				push_constant,
-				push_constant.size()
+				computed_pc,
+				computed_pc.size()
 			)
 
 	_rd.compute_list_dispatch(compute_list, p.wgx, p.wgy, p.wgz)
@@ -270,6 +279,45 @@ func _validate_binding(binding: int, type: _Buffer.Usage):
 					_Buffer.usage_string(type)
 				]
 		)
+
+static func _array_to_bytes(array: Array) -> PackedByteArray:
+	var out := PackedByteArray()
+		
+	for elem in array:
+		if elem is float:
+			out.append_array(PackedFloat32Array([elem]).to_byte_array())
+		
+		elif elem is int:
+			out.append_array(PackedInt32Array([elem]).to_byte_array())
+		
+		elif elem is Vector2:
+			out.append_array(PackedFloat32Array([elem.x, elem.y]).to_byte_array())
+		
+		elif elem is Vector3:
+			out.append_array(PackedFloat32Array([elem.x, elem.y, elem.z]).to_byte_array())
+		
+		elif elem is Vector4:
+			out.append_array(PackedFloat32Array([elem.x, elem.y, elem.z, elem.w]).to_byte_array())
+		
+		elif elem is Color:
+			out.append_array(PackedFloat32Array([elem.r, elem.g, elem.b, elem.a]).to_byte_array())
+		
+		elif elem is Vector2i:
+			out.append_array(PackedInt32Array([elem.x, elem.y]).to_byte_array())
+		
+		elif elem is Vector3i:
+			out.append_array(PackedInt32Array([elem.x, elem.y, elem.z]).to_byte_array())
+		
+		elif elem is Vector4i:
+			out.append_array(PackedInt32Array([elem.x, elem.y, elem.z, elem.w]).to_byte_array())
+		
+		elif elem is Array:
+			out.append_array(_array_to_bytes(elem))
+		
+		else:
+			push_warning("Element of array in push constant is not of supported type: ", elem)
+	
+	return out
 
 class _Pipeline:
 	var shader: RID
