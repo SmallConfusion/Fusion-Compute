@@ -16,6 +16,9 @@ var _lock := false
 
 ## Creates an instance of [Compute].[br]
 ##
+## [param shader] is either a [String] containing the path to the glsl source
+## file or a [RDShaderSPRIV] resource.
+##
 ## [param wg_count_x], [param y], and [param z] are the number of groups that
 ## this compute shader is dispatched on.[br]
 ##
@@ -25,12 +28,17 @@ var _lock := false
 ## call submit on the underlying rendering device, only sets up the compute
 ## list, since only local devices can submit and sync.
 func _init(
-			shader_path: String,
+			shader: Variant,
 			wg_count_x := 1,
 			wg_count_y := 1,
 			wg_count_z := 1,
 			use_global_rd := false,
 		) -> void:
+	assert(
+		shader is String or shader is RDShaderSPIRV,
+		"Shader must either be a path to the glsl source file or a RDShaderSPIRV Resource."
+	)
+	
 	_uses_global_rd = use_global_rd
 
 	if use_global_rd:
@@ -38,7 +46,7 @@ func _init(
 	else:
 		_rd = RenderingServer.create_local_rendering_device()
 	
-	create_pipeline(shader_path, wg_count_x, wg_count_y, wg_count_z)
+	create_pipeline(shader, wg_count_x, wg_count_y, wg_count_z)
 	
 ## Creates a new [Compute] object.
 ## @deprecated: Use `Compute.new()` instead.
@@ -251,15 +259,29 @@ func cleanup() -> void:
 
 ## Creates another pipeline on this [Compute] object. Buffers are shared between
 ## all pipelines.
-func create_pipeline(shader_path: String, wg_count_x := 1, wg_count_y := 1, wg_count_z := 1) -> int:
+##
+## [param shader] is either a [String] containing the path to the glsl source
+## file or a [RDShaderSPRIV] resource.
+func create_pipeline(shader: Variant, wg_count_x := 1, wg_count_y := 1, wg_count_z := 1) -> int:
+	assert(
+		shader is String or shader is RDShaderSPIRV,
+		"Shader must either be a path to the glsl source file or a RDShaderSPIRV Resource."
+	)
+	
 	var p := _Pipeline.new()
 	
 	p.wgx = wg_count_x
 	p.wgy = wg_count_y
 	p.wgz = wg_count_z
 
-	var f := load(shader_path)
-	var spirv: RDShaderSPIRV = f.get_spirv()
+	var spirv: RDShaderSPIRV
+	
+	if shader is String:
+		var f := load(shader)
+		spirv = f.get_spirv()
+	else:
+		spirv = shader
+	
 	p.shader = _rd.shader_create_from_spirv(spirv)
 
 	p.pipeline = _rd.compute_pipeline_create(p.shader)
