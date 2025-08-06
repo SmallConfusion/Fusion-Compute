@@ -1,0 +1,56 @@
+[gd_scene load_steps=8 format=3 uid="uid://2i58ggtqqun8"]
+
+[ext_resource type="Script" uid="uid://batde1iuq5hiw" path="res://addons/fusion_compute/examples/compositor/depth_fog_effect.gd" id="1_6c7ja"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_246r2"]
+sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
+ground_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
+
+[sub_resource type="Sky" id="Sky_6c7ja"]
+sky_material = SubResource("ProceduralSkyMaterial_246r2")
+
+[sub_resource type="Environment" id="Environment_m6xdt"]
+background_mode = 2
+sky = SubResource("Sky_6c7ja")
+tonemap_mode = 2
+glow_enabled = true
+
+[sub_resource type="CompositorEffect" id="CompositorEffect_m6xdt"]
+resource_local_to_scene = false
+resource_name = ""
+enabled = true
+effect_callback_type = 4
+needs_motion_vectors = false
+needs_normal_roughness = false
+script = ExtResource("1_6c7ja")
+metadata/_custom_type_script = "uid://batde1iuq5hiw"
+
+[sub_resource type="Compositor" id="Compositor_246r2"]
+compositor_effects = Array[CompositorEffect]([SubResource("CompositorEffect_m6xdt")])
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6c7ja"]
+albedo_color = Color(1, 0.315858, 0.315858, 1)
+
+[node name="Compositor" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_m6xdt")
+compositor = SubResource("Compositor_246r2")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.866023, -0.433016, 0.250001, 0, 0.499998, 0.866027, -0.500003, 0.749999, -0.43301, 0, 0, 0)
+shadow_enabled = true
+
+[node name="CSGBox3D" type="CSGBox3D" parent="."]
+
+[node name="CSGBox3D2" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6292, 0.471207, -0.27047)
+size = Vector3(1, 1, 0.93457)
+material = SubResource("StandardMaterial3D_6c7ja")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(-0.925904, 0.0995408, -0.364409, 2.30361e-08, 0.964659, 0.263503, 0.37776, 0.243978, -0.893181, -0.573985, 0.870714, -2.92624)
+
+[node name="CSGBox3D3" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+size = Vector3(22.457, 1, 43.4412)

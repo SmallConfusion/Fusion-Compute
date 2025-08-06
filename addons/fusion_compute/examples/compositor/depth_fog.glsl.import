@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://bosowlox8lg8s"
+path="res://.godot/imported/depth_fog.glsl-3e7e8d486cb6d3cab61b3d7646b8222d.res"
+
+[deps]
+
+source_file="res://addons/fusion_compute/examples/compositor/depth_fog.glsl"
+dest_files=["res://.godot/imported/depth_fog.glsl-3e7e8d486cb6d3cab61b3d7646b8222d.res"]
+
+[params]
+

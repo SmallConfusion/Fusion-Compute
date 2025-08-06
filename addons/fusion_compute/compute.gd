@@ -5,6 +5,8 @@ class_name Compute
 ## order, as the first one created will be binding = 0,
 ## the second one will be binding = 1, and so on.
 
+var BUFFER_INVALID = _Buffer.new()
+
 var _rd: RenderingDevice
 
 var _uniforms: Array[RDUniform] = []
@@ -17,7 +19,8 @@ var _lock := false
 ## Creates an instance of [Compute].[br]
 ##
 ## [param shader] is either a [String] containing the path to the glsl source
-## file or a [RDShaderSPRIV] resource.
+## file or to a [RDShaderSPRIV] resource, or either of those as resources.
+## [RDShaderSPIRV] resource itself.
 ##
 ## [param wg_count_x], [param y], and [param z] are the number of groups that
 ## this compute shader is dispatched on.[br]
@@ -35,10 +38,11 @@ func _init(
 			use_global_rd := false,
 		) -> void:
 	assert(
-		shader is String or shader is RDShaderSPIRV,
-		"Shader must either be a path to the glsl source file or a RDShaderSPIRV Resource."
+		shader is String or shader is RDShaderSPIRV or shader is RDShaderFile,
+		"Shader must either be a path to the glsl source file or a RDShaderFile or a RDShaderSPIRV resource."
 	)
 	
+	BUFFER_INVALID.type = _Buffer.Usage.INVALID
 	_uses_global_rd = use_global_rd
 
 	if use_global_rd:
@@ -195,6 +199,15 @@ func get_image_rid(binding: int) -> RID:
 
 	return _buffers[binding].rid
 
+## Allows you to create a buffer yourself. The binding should be specified in
+## the uniform. Useful when creating compositor effects.
+func custom_uniform(uniform: RDUniform) -> void:
+	while len(_uniforms) <= uniform.binding:
+		_uniforms.push_back(RDUniform.new())
+		_buffers.push_back(BUFFER_INVALID)
+	
+	_uniforms[uniform.binding] = uniform
+
 ## Submits the compute shader on a given pipeline, the default pipeline is 0.
 ## If a [PackedByteArray] or [Array] of your push constants is provided, they will be
 ## passed to the shader.
@@ -203,7 +216,9 @@ func submit(push_constant: Variant = PackedByteArray(), pipeline := 0) -> void:
 
 	var p := _pipelines[pipeline]
 
-	if not p.uniform_set.is_valid():
+	if _uses_global_rd:
+		p.uniform_set = UniformSetCacheRD.get_cache(p.shader, 0, _uniforms)
+	elif not p.uniform_set.is_valid():
 		p.uniform_set = _rd.uniform_set_create(_uniforms, p.shader, 0)
 
 	var compute_list = _rd.compute_list_begin()
@@ -261,11 +276,12 @@ func cleanup() -> void:
 ## all pipelines.
 ##
 ## [param shader] is either a [String] containing the path to the glsl source
-## file or a [RDShaderSPRIV] resource.
+## file or to a [RDShaderSPRIV] resource, or either of those as resources.
+## [RDShaderSPIRV] resource itself.
 func create_pipeline(shader: Variant, wg_count_x := 1, wg_count_y := 1, wg_count_z := 1) -> int:
 	assert(
-		shader is String or shader is RDShaderSPIRV,
-		"Shader must either be a path to the glsl source file or a RDShaderSPIRV Resource."
+		shader is String or shader is RDShaderSPIRV or shader is RDShaderFile,
+		"Shader must either be a path to the glsl source file or a RDShaderFile or a RDShaderSPIRV resource."
 	)
 	
 	var p := _Pipeline.new()
@@ -274,13 +290,21 @@ func create_pipeline(shader: Variant, wg_count_x := 1, wg_count_y := 1, wg_count
 	p.wgy = wg_count_y
 	p.wgz = wg_count_z
 
-	var spirv: RDShaderSPIRV
+	var file_data: Variant
 	
 	if shader is String:
-		var f := load(shader)
-		spirv = f.get_spirv()
+		file_data = load(shader)
 	else:
-		spirv = shader
+		file_data = shader
+	
+	var spirv: RDShaderSPIRV
+	
+	if file_data is RDShaderFile:
+		spirv = file_data.get_spirv()
+	elif file_data is RDShaderSPIRV:
+		spirv = file_data
+	else:
+		push_warning("%s is not a valid resource." % shader)
 	
 	p.shader = _rd.shader_create_from_spirv(spirv)
 
@@ -336,6 +360,18 @@ static func _array_to_bytes(array: Array) -> PackedByteArray:
 		elif elem is Array:
 			out.append_array(_array_to_bytes(elem))
 		
+		elif elem is Projection:
+			out.append_array(PackedFloat32Array([elem.x.x, elem.x.y, elem.x.z, elem.x.w]).to_byte_array())
+			out.append_array(PackedFloat32Array([elem.y.x, elem.y.y, elem.y.z, elem.y.w]).to_byte_array())
+			out.append_array(PackedFloat32Array([elem.z.x, elem.z.y, elem.z.z, elem.z.w]).to_byte_array())
+			out.append_array(PackedFloat32Array([elem.w.x, elem.w.y, elem.w.z, elem.w.w]).to_byte_array())
+		
+		elif elem is Transform3D:
+			out.append_array(PackedFloat32Array([elem.basis.x.x, elem.basis.x.x, elem.basis.z.x, 0.0]).to_byte_array())
+			out.append_array(PackedFloat32Array([elem.basis.x.y, elem.basis.x.y, elem.basis.z.y, 0.0]).to_byte_array())
+			out.append_array(PackedFloat32Array([elem.basis.x.z, elem.basis.x.z, elem.basis.z.z, 0.0]).to_byte_array())
+			out.append_array(PackedFloat32Array([elem.origin.x, elem.origin.y, elem.origin.z, 1.0]).to_byte_array())
+		
 		else:
 			push_warning("Element of array in push constant is not of supported type: ", elem)
 	
@@ -356,7 +392,7 @@ class _Pipeline:
 		rd.free_rid(uniform_set)
 
 class _Buffer:
-	enum Usage {DATA, IMAGE}
+	enum Usage {DATA, IMAGE, INVALID}
 
 	var rid: RID
 	var type: Usage
@@ -367,5 +403,7 @@ class _Buffer:
 				return "data"
 			Usage.IMAGE:
 				return "image"
+			Usage.INVALID:
+				return "invalid"
 			_:
 				return "unknown"
