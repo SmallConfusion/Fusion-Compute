@@ -70,6 +70,59 @@ static func create(
 			use_global_rd
 		)
 
+## Converts an array to a byte array. This is used to convert the push constant
+## array to a byte array but is exposed mainly for use with data buffers.
+static func array_to_bytes(array: Array) -> PackedByteArray:
+	var out := PackedByteArray()
+		
+	for elem in array:
+		if elem is float:
+			out.append_array(PackedFloat32Array([elem]).to_byte_array())
+		
+		elif elem is int:
+			out.append_array(PackedInt32Array([elem]).to_byte_array())
+		
+		elif elem is Vector2:
+			out.append_array(PackedFloat32Array([elem.x, elem.y]).to_byte_array())
+		
+		elif elem is Vector3:
+			out.append_array(PackedFloat32Array([elem.x, elem.y, elem.z]).to_byte_array())
+		
+		elif elem is Vector4:
+			out.append_array(PackedFloat32Array([elem.x, elem.y, elem.z, elem.w]).to_byte_array())
+		
+		elif elem is Color:
+			out.append_array(PackedFloat32Array([elem.r, elem.g, elem.b, elem.a]).to_byte_array())
+		
+		elif elem is Vector2i:
+			out.append_array(PackedInt32Array([elem.x, elem.y]).to_byte_array())
+		
+		elif elem is Vector3i:
+			out.append_array(PackedInt32Array([elem.x, elem.y, elem.z]).to_byte_array())
+		
+		elif elem is Vector4i:
+			out.append_array(PackedInt32Array([elem.x, elem.y, elem.z, elem.w]).to_byte_array())
+		
+		elif elem is Array:
+			out.append_array(array_to_bytes(elem))
+		
+		elif elem is Projection:
+			out.append_array(PackedFloat32Array([elem.x.x, elem.x.y, elem.x.z, elem.x.w]).to_byte_array())
+			out.append_array(PackedFloat32Array([elem.y.x, elem.y.y, elem.y.z, elem.y.w]).to_byte_array())
+			out.append_array(PackedFloat32Array([elem.z.x, elem.z.y, elem.z.z, elem.z.w]).to_byte_array())
+			out.append_array(PackedFloat32Array([elem.w.x, elem.w.y, elem.w.z, elem.w.w]).to_byte_array())
+		
+		elif elem is Transform3D:
+			out.append_array(PackedFloat32Array([elem.basis.x.x, elem.basis.y.x, elem.basis.z.x, 0.0]).to_byte_array())
+			out.append_array(PackedFloat32Array([elem.basis.x.y, elem.basis.y.y, elem.basis.z.y, 0.0]).to_byte_array())
+			out.append_array(PackedFloat32Array([elem.basis.x.z, elem.basis.y.z, elem.basis.z.z, 0.0]).to_byte_array())
+			out.append_array(PackedFloat32Array([elem.origin.x, elem.origin.y, elem.origin.z, 1.0]).to_byte_array())
+		
+		else:
+			push_warning("Element of array in push constant is not of supported type: ", elem)
+	
+	return out
+
 ## Changes the work group count on a pipeline. The default pipeline is 0.
 func update_wg_count(
 				wg_count_x := 1,
@@ -97,6 +150,28 @@ func create_data(data: PackedByteArray) -> int:
 	buffer.type = _Buffer.Usage.DATA
 
 	buffer.rid = _rd.storage_buffer_create(data.size(), data)
+	uniform.add_id(buffer.rid)
+
+	_buffers.append(buffer)
+	_uniforms.append(uniform)
+
+	return binding
+
+## Creates an empty data buffer that is [param length] bytes long. It returns
+## the binding that this buffer is on.
+func create_empty_data(length: int) -> int:
+	assert(!_lock, "Attempted to create new data buffer after running.")
+
+	var binding := len(_uniforms)
+
+	var uniform = RDUniform.new()
+	uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_STORAGE_BUFFER
+	uniform.binding = binding
+
+	var buffer := _Buffer.new()
+	buffer.type = _Buffer.Usage.DATA
+
+	buffer.rid = _rd.storage_buffer_create(length)
 	uniform.add_id(buffer.rid)
 
 	_buffers.append(buffer)
@@ -230,7 +305,7 @@ func submit(push_constant: Variant = PackedByteArray(), pipeline := 0) -> void:
 	if push_constant is PackedByteArray:
 		computed_pc = push_constant
 	elif push_constant is Array:
-		computed_pc = _array_to_bytes(push_constant)
+		computed_pc = array_to_bytes(push_constant)
 	else:
 		push_warning("Push constants must either be an Array or a PackedByteArray")
 
@@ -325,57 +400,6 @@ func _validate_binding(binding: int, type: _Buffer.Usage):
 					_Buffer.usage_string(type)
 				]
 		)
-
-static func _array_to_bytes(array: Array) -> PackedByteArray:
-	var out := PackedByteArray()
-		
-	for elem in array:
-		if elem is float:
-			out.append_array(PackedFloat32Array([elem]).to_byte_array())
-		
-		elif elem is int:
-			out.append_array(PackedInt32Array([elem]).to_byte_array())
-		
-		elif elem is Vector2:
-			out.append_array(PackedFloat32Array([elem.x, elem.y]).to_byte_array())
-		
-		elif elem is Vector3:
-			out.append_array(PackedFloat32Array([elem.x, elem.y, elem.z]).to_byte_array())
-		
-		elif elem is Vector4:
-			out.append_array(PackedFloat32Array([elem.x, elem.y, elem.z, elem.w]).to_byte_array())
-		
-		elif elem is Color:
-			out.append_array(PackedFloat32Array([elem.r, elem.g, elem.b, elem.a]).to_byte_array())
-		
-		elif elem is Vector2i:
-			out.append_array(PackedInt32Array([elem.x, elem.y]).to_byte_array())
-		
-		elif elem is Vector3i:
-			out.append_array(PackedInt32Array([elem.x, elem.y, elem.z]).to_byte_array())
-		
-		elif elem is Vector4i:
-			out.append_array(PackedInt32Array([elem.x, elem.y, elem.z, elem.w]).to_byte_array())
-		
-		elif elem is Array:
-			out.append_array(_array_to_bytes(elem))
-		
-		elif elem is Projection:
-			out.append_array(PackedFloat32Array([elem.x.x, elem.x.y, elem.x.z, elem.x.w]).to_byte_array())
-			out.append_array(PackedFloat32Array([elem.y.x, elem.y.y, elem.y.z, elem.y.w]).to_byte_array())
-			out.append_array(PackedFloat32Array([elem.z.x, elem.z.y, elem.z.z, elem.z.w]).to_byte_array())
-			out.append_array(PackedFloat32Array([elem.w.x, elem.w.y, elem.w.z, elem.w.w]).to_byte_array())
-		
-		elif elem is Transform3D:
-			out.append_array(PackedFloat32Array([elem.basis.x.x, elem.basis.x.x, elem.basis.z.x, 0.0]).to_byte_array())
-			out.append_array(PackedFloat32Array([elem.basis.x.y, elem.basis.x.y, elem.basis.z.y, 0.0]).to_byte_array())
-			out.append_array(PackedFloat32Array([elem.basis.x.z, elem.basis.x.z, elem.basis.z.z, 0.0]).to_byte_array())
-			out.append_array(PackedFloat32Array([elem.origin.x, elem.origin.y, elem.origin.z, 1.0]).to_byte_array())
-		
-		else:
-			push_warning("Element of array in push constant is not of supported type: ", elem)
-	
-	return out
 
 class _Pipeline:
 	var shader: RID
